@@ -1,4 +1,5 @@
 import React from "react";
+import { Field, reduxForm } from "redux-form";
 import styled from "styled-components";
 import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import {
@@ -14,13 +15,23 @@ import Checkbox from "@material-ui/core/Checkbox";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
 import { lightBlue } from "@material-ui/core/colors";
-import { connect } from "react-redux";
-import {
-  setInputField,
-  setPasswordField,
-  setCheckBoxStatus,
-  getFormValue
-} from "../../redux/action";
+
+const validate = (values: any) => {
+  const errors: any = {};
+  const requiredFields = ["email", "password"];
+  requiredFields.forEach(field => {
+    if (!values[field]) {
+      errors[field] = "Required";
+    }
+  });
+  if (
+    values.email &&
+    !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(values.email)
+  ) {
+    errors.email = "Invalid email address";
+  }
+  return errors;
+};
 
 const Container = styled.div`
   width: 35%;
@@ -110,78 +121,80 @@ const CopyRightText = styled.p`
   }
 `;
 
-const mapStateToProps = (state: any) => {
-  return {
-    inputField: state.changeInputField.inputField,
-    passwordField: state.changePasswordField.passwordField,
-    checkBoxStatus: state.changeCheckBoxStatus.checkBoxStatus
-  };
-};
-const mapDispatchToProps = (dispatch: any) => ({
-  onInputChange: (event: any) => dispatch(setInputField(event.target.value)),
-  onPasswordChange: (event: any) =>
-    dispatch(setPasswordField(event.target.value)),
-  onCheckboxUpdate: (event: any) =>
-    dispatch(setCheckBoxStatus(event.target.checked)),
-  onFormSubmit: (event: any) => {
-    event.preventDefault();
-    console.log(dispatch);
-    dispatch(getFormValue(event.target.value));
-  }
-});
+const renderTextField = ({
+  label,
+  input,
+  meta: { touched, invalid },
+  ...custom
+}: any) => (
+  <EditedTextField
+    label={label}
+    variant="outlined"
+    placeholder={label}
+    error={touched && invalid}
+    {...input}
+    {...custom}
+  />
+);
+
+const renderCheckbox = ({ input, label }: any) => (
+  <div>
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={input.value ? true : false}
+          onChange={input.onChange}
+        />
+      }
+      label={label}
+    />
+  </div>
+);
+
 const Form: React.FC = (props: any) => {
-  const {
-    checkBoxStatus,
-    onInputChange,
-    onPasswordChange,
-    onCheckboxUpdate,
-    onFormSubmit
-  } = props;
+  const { handleSubmit, pristine, submitting } = props;
   const classes = useStyles();
   return (
     <Container>
-      <ContainerForm onSubmit={onFormSubmit}>
+      <ContainerForm onSubmit={handleSubmit}>
         <FormTitle>
           <Icon>
             <LockOutlinedIcon style={{ color: "#fff" }} />
           </Icon>
           <Title>Вход в аккаунт</Title>
         </FormTitle>
-        <EditedTextField
-          id="user-email"
+        <Field
+          name="email"
+          type="email"
           label="Почта*"
           variant="outlined"
           size="small"
           margin="dense"
-          onChange={onInputChange}
+          component={renderTextField}
         />
-        <EditedTextField
-          id="user-password"
+        <Field
+          name="password"
           label="Пароль*"
           type="password"
           variant="outlined"
           size="small"
           margin="dense"
-          onChange={onPasswordChange}
+          component={renderTextField}
         />
-        <ThemeProvider theme={theme}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                color="primary"
-                onChange={onCheckboxUpdate}
-                value={checkBoxStatus}
-              />
-            }
-            label="Запомнить меня"
-          />
-        </ThemeProvider>
+        <Field
+          name="form-checkbox"
+          component={renderCheckbox}
+          color="primary"
+          label="Запомнить меня"
+        />
+
         <ThemeProvider theme={theme}>
           <Button
             variant="contained"
             color="primary"
             type="submit"
             className={classes.buttonStyle}
+            disabled={pristine || submitting}
           >
             Войти в аккаунт
           </Button>
@@ -201,4 +214,8 @@ const Form: React.FC = (props: any) => {
     </Container>
   );
 };
-export default connect(mapStateToProps, mapDispatchToProps)(Form);
+
+export const LoginForm = reduxForm({
+  form: "login-form",
+  validate
+})(Form);

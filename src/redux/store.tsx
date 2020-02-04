@@ -1,16 +1,8 @@
 import { createStore, combineReducers } from "redux";
-import {
-  changeInputField,
-  changePasswordField,
-  changeCheckBoxStatus,
-  checkFormData
-} from "./reducers";
+import { reducer as formReducer } from "redux-form";
 
 const rootReducer = combineReducers({
-  changeInputField,
-  changePasswordField,
-  changeCheckBoxStatus,
-  checkFormData
+  form: formReducer
 });
 
 export const store = createStore(rootReducer);
